@@ -52,6 +52,7 @@ int pt_sb_alloc_pevent_decoder(struct pt_sb_session *session,
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 #  define snprintf _snprintf_c
@@ -444,6 +445,16 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 			fprintf(stream, "\n  type: %x", event->type);
 			fprintf(stream, "\n  misc: %x", event->misc);
 		}
+
+		break;
+
+	case PERF_RECORD_SAMPLE:
+		if (!event->name || !event->record.raw)
+			return -pte_bad_packet;
+
+		fprintf(stream, "PERF_RECORD_SAMPLE.RAW  %s, ", event->name);
+		for (unsigned i = 0; i < event->record.raw->size; ++i)
+			fprintf(stream, "%02x", (unsigned)((unsigned char)event->record.raw->data[i]));
 
 		break;
 
