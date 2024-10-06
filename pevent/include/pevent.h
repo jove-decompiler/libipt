@@ -152,6 +152,11 @@ struct pev_record_switch_cpu_wide {
 	uint32_t next_prev_tid;
 };
 
+struct pev_record_raw {
+	uint32_t size;
+	char data[];
+};
+
 /* A perf event record. */
 struct pev_event {
 	/* The record type (enum perf_event_type). */
@@ -194,6 +199,8 @@ struct pev_event {
 
 		/* @type = PERF_RECORD_SWITCH_CPU_WIDE. */
 		const struct pev_record_switch_cpu_wide *switch_cpu_wide;
+
+		const struct pev_record_raw *raw;
 	} record;
 
 	/* The additional samples. */
@@ -220,6 +227,8 @@ struct pev_event {
 		/* The sample identifier. */
 		const uint64_t *identifier;
 	} sample;
+
+	const char *name;
 };
 
 static inline void pev_event_init(struct pev_event *event)

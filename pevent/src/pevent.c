@@ -125,7 +125,7 @@ static int pev_strlen(const char *begin, const void *end_arg)
 }
 
 static int pev_sample_type(uint64_t *psample_type, const uint64_t *pidentifier,
-			   const struct pev_config *config)
+			   const struct pev_config *config, const char **pname)
 {
 	if (!psample_type || !config)
 		return -pte_internal;
@@ -159,6 +159,9 @@ static int pev_sample_type(uint64_t *psample_type, const uint64_t *pidentifier,
 			if (!(sample_type & PERF_SAMPLE_IDENTIFIER))
 				return -pte_bad_config;
 
+			if (pname)
+				*pname = stype->name;
+
 			*psample_type = sample_type;
 			return 0;
 		}
@@ -186,7 +189,7 @@ static int pev_read_samples(struct pev_event *event, const uint8_t *begin,
 	if (begin <= pos)
 		pidentifier = (const uint64_t *) pos;
 
-	errcode = pev_sample_type(&sample_type, pidentifier, config);
+	errcode = pev_sample_type(&sample_type, pidentifier, config, NULL);
 	if (errcode < 0)
 		return errcode;
 
@@ -236,6 +239,100 @@ static int pev_read_samples(struct pev_event *event, const uint8_t *begin,
 
 	return (int) (pos - begin);
 }
+
+static int pev_read_sample_samples(struct pev_event *event, const uint8_t *begin,
+			    const uint8_t *end,
+			    const struct pev_config *config)
+{
+	const uint64_t *pidentifier;
+	const uint8_t *pos;
+	uint64_t sample_type;
+	int errcode;
+
+	if (!event || !begin || !end || !config)
+		return -pte_internal;
+
+	pidentifier = (const uint64_t *) begin; /* XXX assumes PERF_SAMPLE_IDENTIFIER */
+
+	errcode = pev_sample_type(&sample_type, pidentifier, config, &event->name);
+	if (errcode < 0)
+		return errcode;
+
+	pos = begin;
+
+	if (sample_type & PERF_SAMPLE_IDENTIFIER) {
+		event->sample.identifier = (const uint64_t *) pos;
+		pos += 8;
+	} else {
+		return -pte_internal;
+	}
+
+	if (sample_type & PERF_SAMPLE_IP) {
+		pos += 8; /* skip */
+	}
+
+	if (sample_type & PERF_SAMPLE_TID) {
+		event->sample.pid = (const uint32_t *) &pos[0];
+		event->sample.tid = (const uint32_t *) &pos[4];
+		pos += 8;
+	}
+
+	if (sample_type & PERF_SAMPLE_TIME) {
+		event->sample.time = (const uint64_t *) pos;
+		pos += 8;
+
+		/* We're reading the time.  Let's make sure the pointer lies
+		 * inside the buffer.
+		 */
+		if (end < pos)
+			return -pte_nosync;
+
+		errcode = pev_time_to_tsc(&event->sample.tsc,
+					  *event->sample.time, config);
+		if (errcode < 0)
+			return errcode;
+	}
+
+	if (sample_type & PERF_SAMPLE_ADDR) {
+		pos += 8; /* skip */
+	}
+
+	if (sample_type & PERF_SAMPLE_ID) {
+		event->sample.id = (const uint64_t *) pos;
+		pos += 8;
+	}
+
+	if (sample_type & PERF_SAMPLE_STREAM_ID) {
+		event->sample.stream_id = (const uint64_t *) pos;
+		pos += 8;
+	}
+
+	if (sample_type & PERF_SAMPLE_CPU) {
+		event->sample.cpu = (const uint32_t *) pos;
+		pos += 8;
+	}
+
+	if (sample_type & PERF_SAMPLE_PERIOD) {
+		pos += 8; /* skip */
+	}
+
+	if (sample_type & PERF_SAMPLE_READ) {
+		return -pte_internal;
+	}
+
+	if (sample_type & PERF_SAMPLE_CALLCHAIN) {
+		pos += (*((const uint64_t *) pos) * 8); /* skip */
+	}
+
+	if (sample_type & PERF_SAMPLE_RAW) {
+		event->record.raw = (const struct pev_record_raw *)pos;
+                pos += 4;
+		pos += event->record.raw->size;
+	}
+
+	return (int) (pos - begin);
+}
+
 
 int pev_read(struct pev_event *event, const uint8_t *begin, const uint8_t *end,
 	     const struct pev_config *config)
@@ -372,6 +469,21 @@ int pev_read(struct pev_event *event, const uint8_t *begin, const uint8_t *end,
 			(const struct pev_record_switch_cpu_wide *) pos;
 		pos += sizeof(*event->record.switch_cpu_wide);
 		break;
+
+	case PERF_RECORD_SAMPLE: {
+		size = pev_read_sample_samples(event, pos, end, config);
+		if (size < 0)
+			return size;
+
+		pos += size;
+		if (pos < begin)
+			return -pte_internal;
+
+		size = (int) (pos - begin);
+		if ((uint16_t) size != header->size)
+			return -pte_nosync;
+	}
+		return size;
 	}
 
 	size = pev_read_samples(event, pos, end, config);
@@ -460,7 +572,7 @@ static int write_samples(uint8_t **stream, const struct pev_event *event,
 	if (!event || !config)
 		return -pte_internal;
 
-	errcode = pev_sample_type(&cstype, event->sample.identifier, config);
+	errcode = pev_sample_type(&cstype, event->sample.identifier, config, NULL);
 	if (errcode < 0)
 		return errcode;
 
