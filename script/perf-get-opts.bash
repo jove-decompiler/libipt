@@ -149,10 +149,11 @@ gawk_sample_type() {
 
 zero_config=1
 perf script --header-only -i $file | grep -e '^# *event *:' | \
-    sed 's/.*id = {\([^}]*\)}.*sample_type = \([^,]*\),.*/\1:\2/' | \
+    sed 's/.*name = \(.*\), , id = {\([^}]*\)}.*sample_type = \([^,]*\),.*/\2:\3:\1/' | \
     while read -r conf; do
         ids=$(echo $conf | sed 's/\([^:]*\):.*/\1/' | sed 's/,//g')
-        sts=$(echo $conf | sed 's/.*:\(.*\)/\1/')
+        sts=$(echo $conf | sed 's/[^:]*:\([^:]*\):.*/\1/')
+        nam=$(echo $conf | sed 's/[^:]*:[^:]*:\(.*\)/\1/')
 
         for id in $ids; do
             # The reserved zero identifier used for synthesized event
@@ -160,10 +161,10 @@ perf script --header-only -i $file | grep -e '^# *event *:' | \
             # the first event.
             #
             if (( $zero_config )); then
-                echo -n " --pevent:sample-config 0:$(gawk_sample_type $sts)"
+                echo -n " --pevent:sample-config 0:$(gawk_sample_type $sts):z"
                 zero_config=0
             fi
-            echo -n " --pevent:sample-config $id:$(gawk_sample_type $sts)"
+            echo -n " --pevent:sample-config $id:$(gawk_sample_type $sts):$nam"
         done
     done
 

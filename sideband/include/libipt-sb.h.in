@@ -458,6 +458,8 @@ struct pev_sample_type {
 	 * At least PERF_SAMPLE_IDENTIFIER must be set.
 	 */
 	uint64_t sample_type;
+
+	char name[32];
 };
 
 /* A perf event sample configuration. */
