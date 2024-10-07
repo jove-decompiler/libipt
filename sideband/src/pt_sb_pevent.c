@@ -622,14 +622,19 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		if (!mmap2)
 			return -pte_bad_packet;
 
-		if (flags & ptsbp_compact)
+		if (flags & ptsbp_compact) {
 			fprintf(stream, "PERF_RECORD_MMAP2  %x/%x, %" PRIx64
 				", %" PRIx64 ", %" PRIx64 ", %x, %x, %" PRIx64
-				", %" PRIx64 ", %x, %x, %s", mmap2->pid,
+				", %" PRIx64 ", %x, %x, ", mmap2->pid,
 				mmap2->tid, mmap2->addr, mmap2->len,
 				mmap2->pgoff, mmap2->maj, mmap2->min,
 				mmap2->ino, mmap2->ino_generation, mmap2->prot,
-				mmap2->flags, mmap2->filename);
+				mmap2->flags);
+
+			unsigned len = strlen(mmap2->filename);
+			for (unsigned i = 0; i < len; ++i)
+				fprintf(stream, "%02x", (unsigned)((unsigned char)mmap2->filename[i]));
+                }
 
 		if (flags & ptsbp_verbose) {
 			fprintf(stream, "PERF_RECORD_MMAP2");
