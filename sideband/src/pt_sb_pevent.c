@@ -428,6 +428,8 @@ static int pt_sb_pevent_fetch(uint64_t *ptsc, struct pt_sb_pevent_priv *priv)
 	return 0;
 }
 
+static int pt_sb_pevent_ignore_mmap(uint16_t misc);
+
 static int pt_sb_pevent_print_event(const struct pev_event *event,
 				    FILE *stream, uint32_t flags)
 {
@@ -459,6 +461,10 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		break;
 
 	case PERF_RECORD_MMAP: {
+		/* We intentionally ignore some MMAP records. */
+		if (pt_sb_pevent_ignore_mmap(event->misc))
+			break;
+
 		const struct pev_record_mmap *mmap;
 
 		mmap = event->record.mmap;
@@ -616,6 +622,10 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		break;
 
 	case PERF_RECORD_MMAP2: {
+		/* We intentionally ignore some MMAP records. */
+		if (pt_sb_pevent_ignore_mmap(event->misc))
+			break;
+
 		const struct pev_record_mmap2 *mmap2;
 
 		mmap2 = event->record.mmap2;
@@ -1303,7 +1313,7 @@ static int pt_sb_pevent_aux(const struct pt_sb_session *session,
 	return 0;
 }
 
-static int pt_sb_pevent_ignore_mmap(uint16_t misc)
+int pt_sb_pevent_ignore_mmap(uint16_t misc)
 {
 	/* We rely on the kernel core file for ring-0 decode.
 	 *
