@@ -463,7 +463,7 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 	case PERF_RECORD_MMAP: {
 		/* We intentionally ignore some MMAP records. */
 		if (pt_sb_pevent_ignore_mmap(event->misc))
-			break;
+			return 0;
 
 		const struct pev_record_mmap *mmap;
 
@@ -471,11 +471,16 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		if (!mmap)
 			return -pte_bad_packet;
 
-		if (flags & ptsbp_compact)
+		if (flags & ptsbp_compact) {
 			fprintf(stream, "PERF_RECORD_MMAP  %x/%x, %" PRIx64
-				", %" PRIx64 ", %" PRIx64 ", %s",
+				", %" PRIx64 ", %" PRIx64 ", ",
 				mmap->pid, mmap->tid, mmap->addr, mmap->len,
-				mmap->pgoff, mmap->filename);
+				mmap->pgoff);
+
+			unsigned len = strlen(mmap->filename);
+			for (unsigned i = 0; i < len; ++i)
+				fprintf(stream, "%02x", (unsigned)((unsigned char)mmap->filename[i]));
+                }
 
 		if (flags & ptsbp_verbose) {
 			fprintf(stream, "PERF_RECORD_MMAP");
@@ -624,7 +629,7 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 	case PERF_RECORD_MMAP2: {
 		/* We intentionally ignore some MMAP records. */
 		if (pt_sb_pevent_ignore_mmap(event->misc))
-			break;
+			return 0;
 
 		const struct pev_record_mmap2 *mmap2;
 
@@ -772,7 +777,7 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		break;
 	}
 
-	return 0;
+	return 1;
 }
 
 static int pt_sb_pevent_print_samples_compact(const struct pev_event *event,
@@ -864,7 +869,7 @@ static int pt_sb_pevent_print(struct pt_sb_pevent_priv *priv, FILE *stream,
 	struct pev_event *event;
 	const uint8_t *pos, *begin;
 	const char *filename;
-	int errcode;
+	int errcode, ret;
 
 	if (!priv)
 		return -pte_internal;
@@ -906,9 +911,9 @@ static int pt_sb_pevent_print(struct pt_sb_pevent_priv *priv, FILE *stream,
 		fprintf(stream, "%016" PRIx64 "  ", event->sample.tsc);
 
 	/* Print the actual sideband record. */
-	errcode = pt_sb_pevent_print_event(event, stream, flags);
-	if (errcode < 0)
-		return errcode;
+	ret = pt_sb_pevent_print_event(event, stream, flags);
+	if (ret <= 0)
+		return ret;
 
 	/* Print samples that were configured for the record. */
 	errcode = pt_sb_pevent_print_samples(event, stream, flags);
