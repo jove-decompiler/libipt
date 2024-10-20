@@ -269,9 +269,9 @@ static int pt_sb_add_decoder(struct pt_sb_decoder **list,
 	if (!list || !decoder || decoder->next)
 		return -pte_internal;
 
-	tsc = decoder->tsc;
+	tsc = decoder->tsc[0];
 	for (cand = *list; cand; list = &cand->next, cand = *list) {
-		if (tsc <= cand->tsc)
+		if (tsc <= cand->tsc[0])
 			break;
 	}
 
@@ -293,7 +293,7 @@ static int pt_sb_fetch(struct pt_sb_session *session,
 	if (!fetch)
 		return -pte_bad_config;
 
-	return fetch(session, &decoder->tsc, decoder->priv);
+	return fetch(session, decoder->tsc, decoder->priv);
 }
 
 static int pt_sb_print(struct pt_sb_session *session,
@@ -459,7 +459,7 @@ int pt_sb_event(struct pt_sb_session *session, struct pt_image **image,
 		/* We don't check @event.has_tsc to support sideband
 		 * correlation based on relative (non-wall clock) time.
 		 */
-		if (event.tsc < decoder->tsc)
+		if (event.tsc < decoder->tsc[0])
 			break;
 
 		session->decoders = decoder->next;
@@ -526,7 +526,7 @@ int pt_sb_dump(struct pt_sb_session *session, FILE *stream, uint32_t flags,
 		if (!decoder)
 			break;
 
-		if (tsc < decoder->tsc)
+		if (tsc < decoder->tsc[0])
 			break;
 
 		session->decoders = decoder->next;
