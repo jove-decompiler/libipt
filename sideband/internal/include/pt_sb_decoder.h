@@ -40,9 +40,6 @@ struct pt_sb_decoder {
 	 */
 	struct pt_sb_decoder *next;
 
-	/* The timestamp of the next sideband record. */
-	uint64_t tsc;
-
 	/* Decoder functions provided by the decoder supplier:
 	 *
 	 * - fetch the next sideband record.
@@ -65,6 +62,11 @@ struct pt_sb_decoder {
 
 	/* A flag saying whether this is a primary or secondary decoder. */
 	uint32_t primary:1;
+
+	/* tsc[0]: The timestamp of the next sideband record.
+	 * tsc[1]: The timestamp of the next global record.
+	 * tsc[2...]: The timestamp of the next record for the cpu (by index). */
+	uint64_t tsc[PT_CPU_MAX + 2];
 };
 
 #endif /* PT_SB_DECODER_H */
