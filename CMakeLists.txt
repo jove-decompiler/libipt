@@ -87,6 +87,11 @@ option(PTUNIT "Enable ptunit, a unit test system and libipt unit tests")
 option(MAN "Enable man pages (requires pandoc)." OFF)
 option(SIDEBAND "Enable libipt-sb, a sideband correlation library")
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
+set(PT_CPU_MAX "256" CACHE STRING "Max number of CPUs")
+
+add_definitions(
+  -DPT_CPU_MAX=${PT_CPU_MAX}
+)
 
 if (SIDEBAND)
   option(PEVENT "Enable perf_event sideband support." OFF)

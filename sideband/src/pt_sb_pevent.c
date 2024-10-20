@@ -366,6 +366,7 @@ static int pt_sb_pevent_fetch(uint64_t *ptsc, struct pt_sb_pevent_priv *priv)
 	const uint8_t *pos;
 	uint64_t tsc, offset;
 	int size;
+	uint64_t *const ptsc0 = ptsc;
 
 	if (!ptsc || !priv)
 		return -pte_internal;
@@ -384,11 +385,24 @@ static int pt_sb_pevent_fetch(uint64_t *ptsc, struct pt_sb_pevent_priv *priv)
 
 	priv->next = pos + size;
 
+	if (event->sample.cpu) {
+		ptsc = &ptsc0[2];
+
+		uint32_t cpu = *event->sample.cpu;
+		if (cpu >= PT_CPU_MAX)
+			return -pte_bad_cpu;
+
+		ptsc += cpu;
+	} else {
+		ptsc = &ptsc0[1];
+	}
+
 	/* If we don't have a time sample, set @ptsc to zero to process the
 	 * record immediately.
 	 */
 	if (!event->sample.time) {
 		*ptsc = 0ull;
+		*ptsc0 = 0ull;
 		return 0;
 	}
 
@@ -424,6 +438,7 @@ static int pt_sb_pevent_fetch(uint64_t *ptsc, struct pt_sb_pevent_priv *priv)
 	 */
 	event->sample.tsc = tsc;
 	*ptsc = tsc;
+	*ptsc0 = tsc;
 
 	return 0;
 }
