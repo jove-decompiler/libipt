@@ -226,6 +226,9 @@ struct pev_event {
 
 		/* The sample identifier. */
 		const uint64_t *identifier;
+
+		/* The instruction pointer. */
+		const uint64_t *ip;
 	} sample;
 
 	const char *name;

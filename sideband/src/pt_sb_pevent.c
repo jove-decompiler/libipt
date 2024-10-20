@@ -466,10 +466,11 @@ static int pt_sb_pevent_print_event(const struct pev_event *event,
 		break;
 
 	case PERF_RECORD_SAMPLE:
-		if (!event->name || !event->record.raw)
+		if (!event->name || !event->record.raw || !event->sample.ip)
 			return -pte_bad_packet;
 
-		fprintf(stream, "PERF_RECORD_SAMPLE.RAW  %s, ", event->name);
+		fprintf(stream, "PERF_RECORD_SAMPLE.RAW  %s, %" PRIx64 ", ",
+		        event->name, *event->sample.ip);
 		for (unsigned i = 0; i < event->record.raw->size; ++i)
 			fprintf(stream, "%02x", (unsigned)((unsigned char)event->record.raw->data[i]));
 

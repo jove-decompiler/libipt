@@ -268,6 +268,7 @@ static int pev_read_sample_samples(struct pev_event *event, const uint8_t *begin
 	}
 
 	if (sample_type & PERF_SAMPLE_IP) {
+		event->sample.ip = (const uint64_t *) pos;
 		pos += 8; /* skip */
 	}
 
