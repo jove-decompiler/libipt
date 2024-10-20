@@ -230,21 +230,3 @@ if [[ -n "$kcore" ]]; then
             }
         '
 fi
-
-fbase="$(basename "$file")"
-mbase="$(basename "$master")"
-sdir="$(dirname "$master")"
-if [[ "$mbase" == "$master" ]]; then
-    sdir="$(dirname "$file")"
-fi
-for sbfile in "$sdir/$fbase"-sideband*.pevent; do
-    if [[ ! -e "$sbfile" ]]; then
-        break
-    fi
-
-    if [[ -z "$master" || "$sbfile" == "$sdir/$mbase" ]]; then
-        echo -n " --pevent:primary $sbfile"
-    else
-        echo -n " --pevent:secondary $sbfile"
-    fi
-done
