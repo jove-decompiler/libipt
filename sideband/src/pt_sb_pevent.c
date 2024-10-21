@@ -53,6 +53,7 @@ int pt_sb_alloc_pevent_decoder(struct pt_sb_session *session,
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 #  define snprintf _snprintf_c
@@ -940,6 +941,18 @@ static int pt_sb_pevent_print(struct pt_sb_pevent_priv *priv, FILE *stream,
 		fprintf(stream, "\n");
 
 	return 0;
+}
+
+struct pev_event *pt_sb_pevent_pop_one(struct pt_sb_pevent_priv *priv) {
+	const uint8_t *pos;
+
+	assert(priv);
+
+	/* We should not be called before fetching the first record. */
+	pos = priv->current;
+	assert(pos && pos >= priv->begin);
+
+	return &priv->event;
 }
 
 static int pt_sb_pevent_switch_contexts(struct pt_sb_session *session,

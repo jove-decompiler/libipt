@@ -35,6 +35,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 #  define snprintf _snprintf_c
@@ -510,6 +511,48 @@ int pt_sb_event(struct pt_sb_session *session, struct pt_image **image,
 		return errcode;
 
 	return pt_sb_event_present(session, image, &session->retired, &event);
+}
+
+extern struct pev_event *pt_sb_pevent_pop_one(struct pt_sb_pevent_priv *priv);
+
+static struct pev_event *pt_sb_pop_one(struct pt_sb_session *session,
+                                       struct pt_sb_decoder *decoder) {
+	assert(decoder);
+	return pt_sb_pevent_pop_one(decoder->priv);
+}
+
+struct pev_event *pt_sb_pop(struct pt_sb_session *session, uint64_t tsc) {
+	struct pev_event *event;
+	struct pt_sb_decoder *decoder;
+	int errcode;
+
+	if (!session)
+		return NULL;
+
+	decoder = session->decoders;
+	if (!decoder)
+		return NULL;
+
+	if (tsc < decoder->tsc[0])
+		return NULL;
+
+	session->decoders = decoder->next;
+	decoder->next = NULL;
+
+	event = pt_sb_pop_one(session, decoder);
+	if (!event)
+		return NULL;
+
+	errcode = pt_sb_fetch(session, decoder);
+	if (errcode < 0) {
+		return NULL;
+	}
+
+	errcode = pt_sb_add_decoder(&session->decoders, decoder);
+	if (errcode < 0)
+		return NULL;
+
+	return event;
 }
 
 int pt_sb_dump(struct pt_sb_session *session, FILE *stream, uint32_t flags,

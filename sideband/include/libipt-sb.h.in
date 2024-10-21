@@ -222,6 +222,12 @@ extern pt_sb_export int pt_sb_event(struct pt_sb_session *session,
 extern pt_sb_export int pt_sb_dump(struct pt_sb_session *session, FILE *stream,
 				   uint32_t flags, uint64_t tsc);
 
+/* Get the next sideband record up to a given timestamp.
+ *
+ * Returns NULL if no such record exists.
+ */
+extern pt_sb_export struct pev_event *pt_sb_pop(struct pt_sb_session *session,
+                                                uint64_t tsc);
 
 /* A process context.
  *
