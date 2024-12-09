@@ -37,8 +37,10 @@ int pev_time_to_tsc(uint64_t *tsc, uint64_t time,
 	uint16_t time_shift;
 	uint32_t time_mult;
 
+#if 0
 	if (!tsc || !config)
 		return -pte_internal;
+#endif
 
 	/* "time 0" is for synthesized events, and is not a real time. Using
 	 * the normal conversion for a synthesized time causes problems, so
@@ -49,15 +51,19 @@ int pev_time_to_tsc(uint64_t *tsc, uint64_t time,
 		return 0;
 	}
 
+#if 0
 	if (!pev_config_has(config, time_zero))
 		return -pte_bad_config;
+#endif
 
 	time_shift = config->time_shift;
 	time_mult = config->time_mult;
 	time_zero = config->time_zero;
 
+#if 0
 	if (!time_mult)
 		return -pte_bad_config;
+#endif
 
 	time -= time_zero;
 
