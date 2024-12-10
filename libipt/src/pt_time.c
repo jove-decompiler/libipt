@@ -134,8 +134,10 @@ int pt_time_update_tsc(struct pt_time *time,
 {
 	(void) config;
 
+#if 0
 	if (!time || !packet)
 		return -pte_internal;
+#endif
 
 	time->have_tsc = 1;
 	time->have_tma = 0;
