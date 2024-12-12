@@ -34,8 +34,10 @@
 
 void pt_last_ip_init(struct pt_last_ip *last_ip)
 {
+#if 0
 	if (!last_ip)
 		return;
+#endif
 
 	last_ip->ip = 0ull;
 	last_ip->have_ip = 0;
@@ -44,22 +46,30 @@ void pt_last_ip_init(struct pt_last_ip *last_ip)
 
 int pt_last_ip_query(uint64_t *ip, const struct pt_last_ip *last_ip)
 {
+#if 0
 	if (!last_ip)
 		return -pte_internal;
+#endif
 
 	if (!last_ip->have_ip) {
+#if 0
 		if (ip)
+#endif
 			*ip = 0ull;
 		return -pte_noip;
 	}
 
 	if (last_ip->suppressed) {
+#if 0
 		if (ip)
+#endif
 			*ip = 0ull;
 		return -pte_ip_suppressed;
 	}
 
+#if 0
 	if (ip)
+#endif
 		*ip = last_ip->ip;
 
 	return 0;
@@ -82,8 +92,10 @@ int pt_last_ip_update_ip(struct pt_last_ip *last_ip,
 {
 	(void) config;
 
+#if 0
 	if (!last_ip || !packet)
 		return -pte_internal;
+#endif
 
 	switch (packet->ipc) {
 	case pt_ipc_suppressed:

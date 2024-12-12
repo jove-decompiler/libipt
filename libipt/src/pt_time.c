@@ -737,8 +737,10 @@ int pt_tcal_update_cyc(struct pt_time_cal *tcal,
 
 	(void) config;
 
+#if 0
 	if (!tcal || !packet)
 		return -pte_internal;
+#endif
 
 	cyc = packet->value;
 	tcal->cyc_mtc += cyc;
@@ -750,8 +752,10 @@ int pt_tcal_update_cyc(struct pt_time_cal *tcal,
 int pt_tcal_update_ovf(struct pt_time_cal *tcal,
 		       const struct pt_config *config)
 {
+#if 0
 	if (!tcal || !config)
 		return -pte_internal;
+#endif
 
 	tcal->tsc = 0ull;
 	tcal->cyc_tsc = 0ull;
